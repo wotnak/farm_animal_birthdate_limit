@@ -1,0 +1,7 @@
+name: farmOS Animal Birthdate Limit
+description: Adds validation to the animal birthdate field.
+type: module
+package: farmOS Contrib
+core_version_requirement: ^9 || ^10
+dependencies:
+  - farm:farm_animal

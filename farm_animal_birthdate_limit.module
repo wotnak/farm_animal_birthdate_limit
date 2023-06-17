@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Farm Animal Birthdate Limit module.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ * 
+ * Adds validation of the animal's birthdate field.
+ */
+function farm_animal_birthdate_limit_form_alter(
+  array &$form,
+  FormStateInterface $form_state,
+  string $form_id,
+): void {
+
+  if (
+    $form_id !== 'asset_animal_add_form'
+    && $form_id !== 'asset_animal_edit_form'
+  ) {
+    return;
+  }
+
+  $form['#validate'][] = '_farm_animal_birthdate_field_validation';
+}
+
+/**
+ * Validate the animal's birthdate is at most 20 years ago.
+ */
+function _farm_animal_birthdate_field_validation(array &$form, FormStateInterface $form_state): void {
+
+  if (
+    !$form_state->hasValue('birthdate')
+    || empty($form_state->getValue('birthdate'))
+  ) {
+    // No birthdate was entered, nothing to validate.
+    return;
+  }
+
+  $birthdateValue = $form_state->getValue('birthdate');
+  if (
+    !is_array($birthdateValue)
+    || !isset($birthdateValue[0])
+    || !isset($birthdateValue[0]['value'])
+    || !$birthdateValue[0]['value'] instanceof DrupalDateTime
+  ) {
+    // The birthdate value is not in the expected format.
+    return;
+  }
+  
+  $now = new DrupalDateTime();
+  $birthdate = $birthdateValue[0]['value'];
+
+  // Calculate the difference in years.
+  $difference = $now->diff($birthdate);
+  $differenceInYears = $difference->y;
+
+  // If the birthdate is more than 20 years ago, display an error.
+  if ($differenceInYears > 20) {
+    $form_state->setErrorByName(
+      'birthdate',
+      t("The animal can't be older than 20 years."),
+    );
+  }
+
+}
